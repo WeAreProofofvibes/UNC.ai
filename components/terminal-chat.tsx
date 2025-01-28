@@ -13,7 +13,7 @@ export default function TerminalChat() {
     { type: 'system', content: 'UNC.AI TERMINAL v2.0.0' },
     { type: 'system', content: 'ESTABLISHING SECURE CONNECTION...' },
     { type: 'system', content: 'CONNECTION ESTABLISHED WITH UNC (Ultimate Nexus Catalyst)' },
-    { type: 'unc', content: 'Peace, young soul. I\'m UNC, your guide on this journey through life. What wisdom do you seek today? Remember, every setback is just a setup for a comeback. The only question is: What\'s your next move?' }
+    { type: 'unc', content: 'Peace, youngsta. I\'m UNC, your guide on this journey through life. What wisdom do you seek today? Remember, every setback is just a setup for a comeback. The only question is: What\'s your next move?' }
   ]);
   
   const [input, setInput] = useState('');
@@ -48,7 +48,7 @@ export default function TerminalChat() {
       }
 
       setMessages(prev => [
-        ...prev.filter(msg => msg.content !== 'UNC IS CONTEMPLATING...'),
+        ...prev.filter(msg => msg.content !== 'UNC IS COOKING...'),
         { type: 'unc', content: response }
       ]);
     }
