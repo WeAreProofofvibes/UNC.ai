@@ -1,5 +1,10 @@
 import { generateText } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import Groq from '@groq/groq';
+
+// Initialize Groq client
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 interface Character {
   name: string;
@@ -22,12 +27,28 @@ const UNC: Character = {
 export const generateResponse = async (prompt: string, topic: string) => {
   const characterPrompt = `You are ${UNC.name}. ${UNC.background} ${UNC.personality} Use your background and personality to inform your responses. Occasionally use one of your key quotes: ${UNC.keyQuotes.join(' | ')}`;
 
-  const { text } = await generateText({
-    model: openai('gpt-3.5-turbo'),
-    system: `${characterPrompt} You specialize in ${topic}. Provide concise, helpful advice based on your experiences and wisdom.`,
-    prompt: prompt
-  });
-  return text;
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: `${characterPrompt} You specialize in ${topic}. Provide concise, helpful advice based on your experiences and wisdom.`
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      model: "mixtral-8x7b-32768", // Groq's recommended model
+      temperature: 0.7,
+      max_tokens: 2048,
+    });
+
+    return completion.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
+  } catch (error) {
+    console.error('Error calling Groq API:', error);
+    throw new Error('Failed to generate response');
+  }
 };
 
 export const handleCommand = async (command: string, argument: string) => {

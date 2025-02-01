@@ -1,4 +1,4 @@
-import TerminalChat from '@/components/terminal-chat'
+import { TerminalChat } from '@/components/terminal-chat'
 
 export default function Home() {
   return (

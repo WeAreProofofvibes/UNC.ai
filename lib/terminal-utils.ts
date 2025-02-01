@@ -1,5 +1,17 @@
-import { generateText } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { GroqClient } from './groq-client';
+
+// Environment configuration
+const getConfig = () => {
+  if (!process.env.NEXT_PUBLIC_GROQ_API_KEY) {
+    throw new Error('NEXT_PUBLIC_GROQ_API_KEY is not set in environment variables');
+  }
+  return {
+    groqApiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY
+  };
+};
+
+// Initialize Groq client
+const groqClient = new GroqClient(getConfig().groqApiKey);
 
 interface Character {
   name: string;
@@ -19,36 +31,50 @@ const UNC: Character = {
   ]
 };
 
-export const generateResponse = async (prompt: string, topic: string) => {
-  const characterPrompt = `You are ${UNC.name}. ${UNC.background} ${UNC.personality} Use your background and personality to inform your responses. Occasionally use one of your key quotes: ${UNC.keyQuotes.join(' | ')}`;
+async function generateResponse(topic: string, prompt: string): Promise<string> {
+  const characterPrompt = `You are ${UNC.name}. ${UNC.background} ${UNC.personality} Use your background and personality to inform your responses. Occasionally use one of your key quotes: ${UNC.keyQuotes.join(' | ')}. You specialize in ${topic}. Provide concise, helpful advice based on your experiences and wisdom.`;
+  
+  try {
+    const messages = [
+      { role: 'system', content: characterPrompt },
+      { role: 'user', content: prompt }
+    ];
 
-  const { text } = await generateText({
-    model: openai('gpt-3.5-turbo'),
-    system: `${characterPrompt} You specialize in ${topic}. Provide concise, helpful advice based on your experiences and wisdom.`,
-    prompt: prompt
-  });
-  return text;
-};
+    return await groqClient.getChatCompletion(messages);
+  } catch (error) {
+    console.error('Error generating response:', error);
+    return 'I apologize, but I encountered an error. Please try again.';
+  }
+}
 
-export const handleCommand = async (command: string, argument: string) => {
-  switch (command) {
-    case '/faith':
-      return await generateResponse(argument, 'spiritual guidance');
-    case '/finance':
-      return await generateResponse(argument, 'financial wisdom');
-    case '/fitness':
-      return await generateResponse(argument, 'health and wellness');
-    case '/family':
-      return await generateResponse(argument, 'relationship guidance');
+export async function handleCommand(command: string, args: string): Promise<string> {
+  switch (command.toLowerCase()) {
     case '/help':
-      return `AVAILABLE COMMANDS:
-/faith - Seek spiritual guidance
-/finance - Financial wisdom
-/fitness - Health and wellness advice
-/family - Relationship guidance
-/help - Show this help message
-/clear - Clear terminal
-/about - Learn about UNC`;
+      return `
+Available commands:
+/clear - Clear the terminal
+/faith [question] - Ask about faith and spirituality
+/finances [question] - Ask about financial advice
+/fitness [question] - Ask about health and fitness
+/family [question] - Ask about family matters
+/about - Learn about UNC
+      `.trim();
+
+    case '/clear':
+      return '';
+
+    case '/faith':
+      return await generateResponse('spiritual guidance', args);
+
+    case '/finances':
+      return await generateResponse('financial wisdom', args);
+
+    case '/fitness':
+      return await generateResponse('health and wellness', args);
+
+    case '/family':
+      return await generateResponse('relationship guidance', args);
+
     case '/about':
       return `UNC (Ultimate Nexus Catalyst):
 ${UNC.background}
@@ -57,8 +83,9 @@ ${UNC.personality}
 
 Key Quotes:
 ${UNC.keyQuotes.map((quote, index) => `${index + 1}. "${quote}"`).join('\n')}`;
+
     default:
       return `Unknown command: ${command}. Type /help for available commands.`;
   }
-};
+}
 
