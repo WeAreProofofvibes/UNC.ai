@@ -8,6 +8,7 @@ export class GroqClient {
   
     async getChatCompletion(messages: Array<{ role: string; content: string }>) {
       try {
+        console.log('Sending request to Groq API...');
         const response = await fetch(this.baseUrl, {
           method: 'POST',
           headers: {
@@ -22,6 +23,12 @@ export class GroqClient {
         });
   
         if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          console.error('Groq API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
           throw new Error(`Groq API error: ${response.statusText}`);
         }
   
