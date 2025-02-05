@@ -2,12 +2,11 @@ import { GroqClient } from './groq-client';
 
 // Environment configuration
 const getConfig = () => {
-  if (!process.env.NEXT_PUBLIC_GROQ_API_KEY) {
+  const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+  if (!apiKey) {
     throw new Error('NEXT_PUBLIC_GROQ_API_KEY is not set in environment variables');
   }
-  return {
-    groqApiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY
-  };
+  return { groqApiKey: apiKey };
 };
 
 // Initialize Groq client
@@ -38,12 +37,33 @@ async function generateResponse(topic: string, prompt: string): Promise<string> 
     const messages = [
       { role: 'system', content: characterPrompt },
       { role: 'user', content: prompt }
-    ];
+    ] as Array<{ role: 'system' | 'user', content: string }>;
 
-    return await groqClient.getChatCompletion(messages);
-  } catch (error) {
-    console.error('Error generating response:', error);
-    return 'I apologize, but I encountered an error. Please try again.';
+    const response = await groqClient.getChatCompletion(messages);
+    
+    if (!response) {
+      throw new Error('No response received from Groq');
+    }
+    
+    return response;
+  } catch (error: unknown) {
+    console.error('Groq API error:', {
+      error: error instanceof Error ? error.message : String(error),
+      apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY ? 'Present' : 'Missing'
+    });
+    
+    if (error instanceof Error) {
+      // Check for various API key related errors
+      if (error.message.includes('API key') || 
+          error.message.includes('authentication') || 
+          error.message.includes('401') ||
+          error.message.includes('unauthorized')) {
+        throw new Error('Please check your API key configuration in .env.local');
+      }
+      // Pass through the original error message
+      throw new Error(`Groq API error: ${error.message}`);
+    }
+    throw new Error('An unexpected error occurred');
   }
 }
 

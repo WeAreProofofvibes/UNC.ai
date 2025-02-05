@@ -1,11 +1,6 @@
-import { generateText } from 'ai';
-import Groq from '@groq/groq';
+import Groq from "groq-sdk";
 
-// Initialize Groq client
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
+// Type definitions
 interface Character {
   name: string;
   background: string;
@@ -13,6 +8,12 @@ interface Character {
   keyQuotes: string[];
 }
 
+interface Message {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+// Character definition
 const UNC: Character = {
   name: "UNC (Ultimate Nexus Catalyst)",
   background: `Born and raised in inner-city Philadelphia, UNC overcame challenges through faith, mentorship, and self-discipline. He became a successful real estate developer, cryptocurrency investor, and business operator. UNC is a family man, active church member, and community leader known for his generosity and wisdom.`,
@@ -24,11 +25,22 @@ const UNC: Character = {
   ]
 };
 
-export const generateResponse = async (prompt: string, topic: string) => {
-  const characterPrompt = `You are ${UNC.name}. ${UNC.background} ${UNC.personality} Use your background and personality to inform your responses. Occasionally use one of your key quotes: ${UNC.keyQuotes.join(' | ')}`;
+// Initialize Groq client with error handling
+const createGroqClient = () => {
+  const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error('NEXT_PUBLIC_GROQ_API_KEY is not set in environment variables');
+  }
+  return new Groq({ apiKey });
+};
 
+const groq = createGroqClient();
+
+export const generateResponse = async (prompt: string, topic: string): Promise<string> => {
+  const characterPrompt = `You are ${UNC.name}. ${UNC.background} ${UNC.personality} Use your key quotes when appropriate: ${UNC.keyQuotes.join(' | ')}`;
+  
   try {
-    const completion = await groq.chat.completions.create({
+    const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
           role: "system",
@@ -39,47 +51,70 @@ export const generateResponse = async (prompt: string, topic: string) => {
           content: prompt
         }
       ],
-      model: "mixtral-8x7b-32768", // Groq's recommended model
+      model: "mixtral-8x7b-32768",
       temperature: 0.7,
-      max_tokens: 2048,
+      max_tokens: 1024,
+      top_p: 1,
+      stream: false
     });
 
-    return completion.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
-  } catch (error) {
-    console.error('Error calling Groq API:', error);
-    throw new Error('Failed to generate response');
+    const content = chatCompletion?.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response content received from Groq');
+    }
+
+    return content;
+  } catch (error: unknown) {
+    console.error('Groq API error:', {
+      error: error instanceof Error ? error.message : String(error),
+      apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY ? 'Present' : 'Missing'
+    });
+    
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        throw new Error('Invalid API key configuration');
+      }
+      throw new Error(`Groq API error: ${error.message}`);
+    }
+    throw new Error('An unexpected error occurred');
   }
 };
 
-export const handleCommand = async (command: string, argument: string) => {
-  switch (command) {
-    case '/faith':
-      return await generateResponse(argument, 'spiritual guidance');
-    case '/finance':
-      return await generateResponse(argument, 'financial wisdom');
-    case '/fitness':
-      return await generateResponse(argument, 'health and wellness');
-    case '/family':
-      return await generateResponse(argument, 'relationship guidance');
-    case '/help':
-      return `AVAILABLE COMMANDS:
-/faith - Seek spiritual guidance
-/finance - Financial wisdom
-/fitness - Health and wellness advice
-/family - Relationship guidance
+export const handleCommand = async (command: string, args: string): Promise<string> => {
+  const commands = {
+    '/faith': 'spiritual guidance',
+    '/finances': 'financial wisdom',
+    '/fitness': 'health and wellness',
+    '/family': 'relationship guidance'
+  } as const;
+
+  type CommandKey = keyof typeof commands;
+
+  if (command === '/help') {
+    return `Available Commands:
+/faith [question] - Seek spiritual guidance
+/finances [question] - Get financial wisdom
+/fitness [question] - Health and wellness advice
+/family [question] - Relationship guidance
 /help - Show this help message
 /clear - Clear terminal
 /about - Learn about UNC`;
-    case '/about':
-      return `UNC (Ultimate Nexus Catalyst):
+  }
+
+  if (command === '/about') {
+    return `UNC (Ultimate Nexus Catalyst):
 ${UNC.background}
 
 ${UNC.personality}
 
 Key Quotes:
 ${UNC.keyQuotes.map((quote, index) => `${index + 1}. "${quote}"`).join('\n')}`;
-    default:
-      return `Unknown command: ${command}. Type /help for available commands.`;
   }
+
+  if (command in commands) {
+    return await generateResponse(args, commands[command as CommandKey]);
+  }
+
+  return `Unknown command: ${command}. Type /help for available commands.`;
 };
 
