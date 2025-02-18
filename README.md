@@ -1,4 +1,4 @@
-# UNC.AI - Ultimate Nexus Catalyst
+# UNC.AI - Ultimate Nexus Catalyst (UNC.FUN)
 > "Every setback is just a setup for a comeback. The only question is: What's your next move?" - UNC
 
 ## Overview
