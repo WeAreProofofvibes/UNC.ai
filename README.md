@@ -85,6 +85,19 @@ UNC> Peace, young soul. What wisdom do you seek today?
 - Wisdom repository
 - Achievement system
 
+## Project Structure
+
+The project is organized into several key directories, each serving a specific purpose:
+
+- **app/**: Contains the main application components and pages. The `layout.tsx` file defines the root layout of the application, including metadata and global styles.
+- **components/**: Reusable UI components that are used throughout the application.
+- **styles/**: Contains global and component-specific stylesheets. The `globals.css` file includes styles that apply to the entire application.
+- **public/**: Static assets such as images, fonts, and other files that are served directly by the server.
+- **utils/**: Utility functions and helpers that are used across different parts of the application.
+- **hooks/**: Custom React hooks that encapsulate reusable logic.
+- **services/**: API service functions that handle data fetching and other network operations.
+- **tests/**: Unit and integration tests for the application components and logic.
+
 ## Getting Started
 
 1. Clone the repository

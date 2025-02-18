@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { handleCommand } from '@/lib/terminal-utils';
 import { MatrixBackground } from './matrix-background';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 interface Message {
   type: 'system' | 'unc' | 'user';
@@ -63,10 +64,29 @@ export const TerminalChat: React.FC = () => {
       <div className="terminal-window">
         <div className="min-h-[80vh] max-h-[80vh] bg-transparent text-green-500 font-mono p-4">
           <div className="mb-8 border border-green-500 p-4">
-            <h1 className="text-2xl mb-2">UNC.AI TERMINAL</h1>
-            <p className="opacity-70">
-              FAITH | FINANCES | FITNESS | FAMILY
-            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline">
+                <h1 className="text-2xl">unc.fun</h1>
+                <div className="flex space-x-4 ml-4">
+                  <a href="https://x.com/uncdotfun" target="_blank" rel="noopener noreferrer">
+                    <i className="fab fa-twitter text-green-500"></i>
+                  </a>
+                  <a href="https://t.me/uncdotfun" target="_blank" rel="noopener noreferrer">
+                    <i className="fab fa-telegram text-green-500"></i>
+                  </a>
+                </div>
+              </div>
+              <a href="https://pump.fun/coin/3NmdPK8TfVW91VNpJ89jXsUkVxTzgLc2wyguqMSwGF8R?coins_sort=market_cap" target="_blank" rel="noopener noreferrer">
+                <button className="bg-green-500 text-white px-4 py-2 rounded">
+                  BUY NOW
+                </button>
+              </a>
+            </div>
+            <div className="flex justify-between items-center">
+              <p className="opacity-70">
+                FAITH | FINANCES | FITNESS | FAMILY
+              </p>
+            </div>
           </div>
 
           <div className="mb-8 h-[50vh] overflow-y-auto border border-green-500 p-4">
